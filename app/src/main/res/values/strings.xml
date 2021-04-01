@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">KaKao Application</string>
+
+    <string name="search_hint">이미지 검색</string>
+    <string name="start_search">이미지를 검색해주세요.</string>
+    <string name="no_result">검색 결과가 없습니다.</string>
+    <string name="empty_site_name">출처 없음</string>
+    <string name="transition_name">image</string>
+    <string name="detail_title">Detail Image</string>
+    <string name="loading_message">Loading.. Please Wait!</string>
+</resources>
