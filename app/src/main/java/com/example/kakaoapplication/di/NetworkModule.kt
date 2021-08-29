@@ -5,23 +5,23 @@ import com.example.kakaoapplication.data.HeaderInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ApplicationComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 object NetworkModule {
 
     private const val BASE_URL = "https://dapi.kakao.com/"
     private const val CONNECT_TIMEOUT = 1L
     private const val WRITE_TIMEOUT = 30L
-    private const val READ_TIMEOUT = 15L
+    private const val READ_TIMEOUT = 30L
 
     @Provides
     fun provideOkHttpClient(): OkHttpClient {

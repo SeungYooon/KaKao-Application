@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.kakaoapplication.R
 import com.example.kakaoapplication.data.model.Document
@@ -20,18 +21,28 @@ import io.reactivex.Observable
 import io.reactivex.ObservableOnSubscribe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_kakao.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 
 @AndroidEntryPoint
 class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
+
     private lateinit var binding: ActivityKakaoBinding
     private lateinit var adapter: KakaoAdapter
     private var queryInput = ""
     private val viewModel: KakaoViewModel by viewModels()
     private var page = 1
     private val list = ArrayList<Document>()
-    private val snackBar: Snackbar by lazy { Snackbar.make(view, R.string.loading_message, Snackbar.LENGTH_SHORT) }
+    private val snackBar: Snackbar by lazy {
+        Snackbar.make(
+            view,
+            R.string.loading_message,
+            Snackbar.LENGTH_SHORT
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,8 +53,7 @@ class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
         setupSearchView()
         setAdapter()
         setScrollListener()
-        observeImage()
-        observeResult()
+        observeImageList()
     }
 
     @SuppressLint("CheckResult")
@@ -89,11 +99,22 @@ class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
 
     private fun setAdapter() {
         adapter = KakaoAdapter(list, this)
+
+        GridLayoutManager(this, 3).apply {
+            binding.recyclerView.layoutManager = this
+        }
+
         binding.recyclerView.adapter = adapter
         binding.recyclerView.setHasFixedSize(true)
     }
 
     private fun setScrollListener() {
+        binding.pullToRefresh.setOnRefreshListener {
+            list.clear()
+            fetchImage(queryInput, 1)
+            binding.pullToRefresh.isRefreshing = false
+        }
+
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -104,7 +125,7 @@ class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
                     fetchImage(queryInput, page)
 
                     Completable.complete()
-                        .delay(2000, TimeUnit.MILLISECONDS)
+                        .delay(1000, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnComplete {
                             hideSnackBar()
@@ -120,15 +141,21 @@ class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
         adapter.notifyItemRangeInserted(page * 30, 30)
     }
 
-    private fun observeImage() {
-        viewModel.imageLiveData.observe(this, { response ->
-            list.addAll(response.documents)
-        })
+    private fun observeImageList() {
+        observeImage()
+        observeEmpty()
+        observeError()
     }
 
-    private fun observeResult() {
-        viewModel.resultLiveData.observe(this, { flag ->
-            when (flag) {
+    private fun observeImage() {
+        viewModel.imageList.observe(this) { response ->
+            list.addAll(response.documents)
+        }
+    }
+
+    private fun observeEmpty() {
+        viewModel.isEmptyList.observe(this) { isEmpty ->
+            when (isEmpty) {
                 true -> {
                     showEmptyResult()
                     hideRecyclerView()
@@ -138,7 +165,22 @@ class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
                     showRecyclerView()
                 }
             }
-        })
+        }
+    }
+
+    private fun observeError() {
+        viewModel.isError.observe(this) { isError ->
+            when (isError) {
+                true -> {
+                    showErrorText()
+                    hideRecyclerView()
+                }
+                false -> {
+                    hideErrorText()
+                    showRecyclerView()
+                }
+            }
+        }
     }
 
     private fun updateList() {
@@ -146,7 +188,7 @@ class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
         adapter.notifyDataSetChanged()
     }
 
-    private fun fetchImage(query: String, page: Int) {
+    private fun fetchImage(query: String, page: Int) = CoroutineScope(Dispatchers.IO).launch  {
         viewModel.fetchImages(query, page, 30)
     }
 
@@ -156,6 +198,14 @@ class KakaoActivity : AppCompatActivity(), KakaoAdapter.OnClickListener {
 
     private fun hideRecyclerView() {
         binding.recyclerView.isVisible = false
+    }
+
+    private fun showErrorText() {
+        binding.textError.isVisible = true
+    }
+
+    private fun hideErrorText() {
+        binding.textError.isVisible = false
     }
 
     private fun showSearchText() {
