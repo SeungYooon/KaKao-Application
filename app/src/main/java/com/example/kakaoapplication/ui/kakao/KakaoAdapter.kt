@@ -4,6 +4,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.kakaoapplication.R
 import com.example.kakaoapplication.data.model.Document
 import com.example.kakaoapplication.databinding.ItemListBinding

@@ -5,7 +5,6 @@ import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 data class Document(
-    val collection: String,
     val datetime: String,
     val display_sitename: String,
     val height: Int,
